@@ -1,15 +1,33 @@
 from flask import Flask
-from flask_restful import Api, Resource
+import requests
+from flask_restful import Api, Resource, reqparse, abort
 
 app = Flask(__name__)
 api = Api(app)
 
-class HelloWorld(Resource):
-    def get(self, name, test):
-        return {"name": name, "test": test}
+video_put_args = reqparse.RequestParser()
+video_put_args.add_argument("name", type=str, help="Name of the video", required=True)
+video_put_args.add_argument("views", type=str, help="Views of the video", required=True)
+video_put_args.add_argument("likes", type=str, help="Likes of the video", required=True)
+
+videos = {}
+
+def abort_func(video_id):
+    if video_id not in videos:
+        abort(404, message="Invalid video id")
 
 
-api.add_resource(HelloWorld, "/hello/<string:name>/<int:test>")
+class Video(Resource):
+    def get(self, video_id):
+        abort_func(video_id)
+        return videos[video_id]
+    def put(self, video_id):
+        args = video_put_args.parse_args()
+        videos[video_id] = args
+        return videos[video_id]
+
+
+api.add_resource(Video, "/video/<int:video_id>")
 
 if __name__ == "main":
     app.run(debug=True)
